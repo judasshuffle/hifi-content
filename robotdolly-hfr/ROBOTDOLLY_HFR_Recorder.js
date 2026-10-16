@@ -4,7 +4,7 @@
 (function () {
     'use strict';
     var x = 35, y = 325, ids = [], buttons = [];
-    var recording = false, available = false, statusID, labelID;
+    var recording = false, available = false, fresh = false, statusID;
 
     function box(label, left, top, width, height, rgb, fontSize) {
         var id = Overlays.addOverlay('text', {
@@ -33,6 +33,7 @@
         Recording.startRecording();
         recording = true;
         available = false;
+        fresh = false;
         status('RECORDING — walk, turn or speak; then STOP.');
     }
     function stop() {
@@ -40,6 +41,7 @@
             Recording.stopRecording();
             recording = false;
             available = true;
+            fresh = true;
             status('Stopped. Press SAVE HFR to choose a filename.');
         } else if (Recording.isPlaying && Recording.isPlaying()) {
             Recording.stopPlaying();
@@ -65,6 +67,7 @@
         if (!path || path === 'null') { return; }
         Recording.loadRecording(path, function (success) {
             available = !!success;
+            fresh = false;
             status(success ? 'Loaded. PLAY PREVIEW uses your own avatar.' : 'Could not load the selected HFR file.');
         });
     }
@@ -73,7 +76,9 @@
         if (!available && (!Recording.playerLength || Recording.playerLength() <= 0)) {
             status('Nothing loaded.'); return;
         }
-        Recording.loadLastRecording();
+        if (fresh && typeof Recording.loadLastRecording === 'function') {
+            Recording.loadLastRecording();
+        }
         Recording.setPlayFromCurrentLocation(true);
         Recording.setPlayerLoop(false);
         Recording.setPlayerUseSkeletonModel(false);
