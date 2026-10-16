@@ -91,6 +91,9 @@
     // An assignment-client agent is an independent avatar, visible to visitors.
     Agent.isAvatar = true;
     Avatar.displayName = 'ROBOTDOLLY Actor';
+    // Test with Judas's known-working avatar instead of the archived HFR avatar.
+    Avatar.skeletonModelURL = 'https://pub-a8eb3338bbbe465eb7bd3f51e3d454d6.r2.dev/ids/4kUS8eTmZ9ET1BZo';
+    log('Assigned Judas placeholder avatar model: ' + Avatar.skeletonModelURL);
     Avatar.position = target;
     Messages.subscribe(CHANNEL);
     Messages.messageReceived.connect(command);
