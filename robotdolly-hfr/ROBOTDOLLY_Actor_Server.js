@@ -56,7 +56,7 @@
             Recording.setPlayFromCurrentLocation(true);
             Recording.setPlayerLoop(looping);
             Recording.setPlayerUseDisplayName(false);
-            Recording.setPlayerUseSkeletonModel(true);
+            Recording.setPlayerUseSkeletonModel(false); // Test: avoid missing original HFR avatar model
             Recording.startPlaying();
             status('Playing at ' + [target.x.toFixed(1), target.y.toFixed(1), target.z.toFixed(1)].join(', '));
         } catch (e) { status('Playback error: ' + e); }
