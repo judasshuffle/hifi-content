@@ -1,5 +1,5 @@
 // ROBOTDOLLY HFR RECORDER — experimental local viewer recording panel.
-// Uses legacy High Fidelity MyAvatar recording API; test in DarkRide.
+// Uses DarkRide's confirmed Recording.* API; experimental.
 // Runs in the VIEWER (not the domain's persistent scripts).
 (function () {
     'use strict';
@@ -30,20 +30,19 @@
     }
     function record() {
         if (recording) { status('Already recording. Press STOP first.'); return; }
-        MyAvatar.startRecording();
+        Recording.startRecording();
         recording = true;
         available = false;
         status('RECORDING — walk, turn or speak; then STOP.');
     }
     function stop() {
         if (recording) {
-            MyAvatar.stopRecording();
+            Recording.stopRecording();
             recording = false;
-            MyAvatar.loadLastRecording();
             available = true;
             status('Stopped. Press SAVE HFR to choose a filename.');
-        } else if (MyAvatar.isPlaying && MyAvatar.isPlaying()) {
-            MyAvatar.stopPlaying();
+        } else if (Recording.isPlaying && Recording.isPlaying()) {
+            Recording.stopPlaying();
             status('Preview stopped.');
         } else {
             status('Not currently recording.');
@@ -51,31 +50,34 @@
     }
     function save() {
         if (recording) { status('Stop the recording first.'); return; }
-        if (!available && (!MyAvatar.playerLength || MyAvatar.playerLength() <= 0)) {
+        if (!available && (!Recording.playerLength || Recording.playerLength() <= 0)) {
             status('Nothing recorded yet. Press RECORD first.'); return;
         }
-        var path = Window.save('Save HFR recording', '.', 'High Fidelity recordings (*.hfr)');
+        var path = Window.save('Save HFR recording', Recording.getDefaultRecordingSaveDirectory ? Recording.getDefaultRecordingSaveDirectory() : '.', 'High Fidelity recordings (*.hfr)');
         if (!path || path === 'null') { status('Save cancelled.'); return; }
-        MyAvatar.saveRecording(path);
-        status('Saved recording: ' + path);
+        if (!/\.hfr$/i.test(path)) { path += '.hfr'; }
+        Recording.saveRecording(path);
+        status('Save requested: ' + path);
     }
     function load() {
         if (recording) { status('Stop recording first.'); return; }
         var path = Window.browse('Open HFR recording', '.', 'High Fidelity recordings (*.hfr *.rec)');
         if (!path || path === 'null') { return; }
-        MyAvatar.loadRecording(path);
-        available = true;
-        status('Loaded local file. PLAY PREVIEW uses your own avatar.');
+        Recording.loadRecording(path, function (success) {
+            available = !!success;
+            status(success ? 'Loaded. PLAY PREVIEW uses your own avatar.' : 'Could not load the selected HFR file.');
+        });
     }
     function preview() {
         if (recording) { status('Stop recording first.'); return; }
-        if (!available && (!MyAvatar.playerLength || MyAvatar.playerLength() <= 0)) {
+        if (!available && (!Recording.playerLength || Recording.playerLength() <= 0)) {
             status('Nothing loaded.'); return;
         }
-        MyAvatar.setPlayFromCurrentLocation(true);
-        MyAvatar.setPlayerLoop(false);
-        MyAvatar.setPlayerUseSkeletonModel(false);
-        MyAvatar.startPlaying();
+        Recording.loadLastRecording();
+        Recording.setPlayFromCurrentLocation(true);
+        Recording.setPlayerLoop(false);
+        Recording.setPlayerUseSkeletonModel(false);
+        Recording.startPlaying();
         status('Preview playing on YOUR avatar (not the server actor).');
     }
     box('ROBOTDOLLY  |  HFR RECORDER', x, y, 438, 38, { red: 22, green: 26, blue: 38 }, 18);
@@ -95,7 +97,7 @@
     }
     Controller.mousePressEvent.connect(click);
     Script.scriptEnding.connect(function () {
-        if (recording) { try { MyAvatar.stopRecording(); } catch (e) {} }
+        if (recording) { try { Recording.stopRecording(); } catch (e) {} }
         Controller.mousePressEvent.disconnect(click);
         for (var i = 0; i < ids.length; i++) { Overlays.deleteOverlay(ids[i]); }
     });
