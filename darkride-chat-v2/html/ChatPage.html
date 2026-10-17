@@ -1,0 +1,384 @@
+<!--
+//  ChatPage.html
+//
+//  Created by Faye Li on 3 Feb 2017
+//  Modified by Don Hopkins (dhopkins@donhopkins.com).
+//  Copyright 2017 High Fidelity, Inc.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+-->
+<html>
+    <head>
+        <title>Chat</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,600,700"" rel="stylesheet">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+        <style>
+:root { --bg:#101522; --panel:#171e30; --edge:#303a56; --ink:#f0f5ff; --muted:#aab7d0; --cyan:#48e5df; --violet:#a78bfa; --font:15px; }
+* { box-sizing:border-box; }
+html, body { width:100%;height:100%;margin:0;overflow:hidden; }
+body { background:var(--bg); color:var(--ink);font-family:Arial,Helvetica,sans-serif; }
+.Content { display:flex;flex-direction:column;height:100%;min-width:260px; background:linear-gradient(160deg,#1a2236 0%,#101523 44%,#0c1220 100%); }
+.TopBar {display:flex;align-items:center;gap:10px;min-height:65px;padding:12px 16px;border-bottom:1px solid var(--edge);background:linear-gradient(95deg,rgba(53,67,102,.65),rgba(23,30,48,.9));}
+.Logo {width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#30cfc9,#8755e8);display:flex;align-items:center;justify-content:center;color:#0c1020;font-size:21px;font-weight:bold;box-shadow:0 4px 16px rgba(59,211,209,.22);}
+.Brand {flex:1;min-width:0;}
+.BrandTitle {font-size:16px;font-weight:bold;letter-spacing:.2px;}
+.BrandSub {color:var(--muted);font-size:11px;margin-top:4px;}
+.LiveDot {display:inline-block;width:7px;height:7px;background:#45dfac;border-radius:50%;box-shadow:0 0 10px #45dfac;margin-right:5px;}
+.Controls {display:flex;gap:4px;}
+.IconBtn {min-width:27px;height:28px;padding:0 7px;border:1px solid #49526d;border-radius:7px;background:#242d43;color:#e4edff;cursor:pointer;font-size:12px;}
+.IconBtn:hover {background:#3b4664;}
+.Notice {padding:7px 16px;background:rgba(53,211,206,.06);color:#a2b5cf;border-bottom:1px solid #29334a;font-size:11px;}
+.Notice strong {color:#50e0db;}
+.ChatLog {flex:1;min-height:0;overflow:auto;padding:16px 14px 20px;scrollbar-color:#59688b #151c2b;}
+.ChatLogLine {position:relative;margin:0 0 10px;padding:11px 13px;border:1px solid rgba(133,156,202,.15);border-radius:12px;background:rgba(55,68,101,.30);line-height:1.5;font-size:var(--font);overflow-wrap:anywhere;}
+.ChatLogLine:nth-child(3n+2) {background:rgba(74,64,117,.28);}
+.ChatLogLineDisplayName {font-weight:bold;color:var(--cyan);cursor:pointer;margin-right:4px;}
+.ChatLogLine:nth-child(3n+2) .ChatLogLineDisplayName {color:#c5adff;}
+.ChatLogLine:nth-child(3n+3) .ChatLogLineDisplayName {color:#f7c78d;}
+.ChatLogLineDisplayName:hover {text-decoration:underline;}
+.ChatLogLineMessage {white-space:pre-wrap;color:var(--ink);}
+.TimeStamp {float:right;font-size:10px;color:#8392b0;margin-left:8px;margin-top:3px;}
+.LogLogLine {font-size:12px;line-height:1.55;color:#aab7d0;font-style:italic;margin:4px 0 12px;padding:9px 12px;border-left:2px solid #4bd9d5;background:rgba(42,57,84,.3);border-radius:0 7px 7px 0;}
+.ChatInput {padding:11px 13px 14px;border-top:1px solid var(--edge);background:rgba(18,24,40,.93);display:flex;gap:8px;align-items:center;}
+.ChatInputText {flex:1;min-width:0;height:42px;padding:0 13px;background:#232e45;border:1px solid #4b5876;outline:none;border-radius:10px;color:#fff;font-size:var(--font);font-family:inherit;}
+.ChatInputText:focus {border-color:var(--cyan);box-shadow:0 0 0 2px rgba(72,229,223,.12);}
+.ChatInputText::placeholder {color:#98a6c2;}
+.SendBtn {height:42px;padding:0 16px;background:linear-gradient(135deg,#35cfca,#8771ef);color:#101428;font-weight:bold;border:0;border-radius:10px;cursor:pointer;}
+.SendBtn:hover {filter:brightness(1.13);}
+.Footer {text-align:center;color:#7888a7;background:#12182a;padding:0 10px 8px;font-size:10px;}
+</style>
+    </head>
+    <body>
+
+        <div class="Content">
+  <div class="TopBar">
+    <div class="Logo">✦</div>
+    <div class="Brand"><div class="BrandTitle">DarkRide <span style="color:var(--cyan)">Chat</span></div><div class="BrandSub"><span class="LiveDot"></span> Nearby · Domain chat</div></div>
+    <div class="Controls"><button type="button" class="IconBtn" id="FontDown" title="Smaller text">A−</button><button type="button" class="IconBtn" id="FontUp" title="Larger text">A+</button><button type="button" class="IconBtn" id="ClearLog" title="Clear chat history">Clear</button></div>
+  </div>
+  <div class="Notice"><strong>PUBLIC</strong> · Everyone using this chat in your current domain can see messages</div>
+  <div class="ChatLog" id="ChatLog" aria-live="polite"></div>
+  <div class="ChatInput"><input type="text" class="ChatInputText" id="ChatInputText" size="256" maxlength="256" placeholder="Message nearby avatars…" autocomplete="off"/><button type="button" class="SendBtn" id="SendMessage">Send ↗</button></div>
+  <div class="Footer">Press Enter to send · /help for commands</div>
+</div>
+    </body>
+
+    <script>
+
+        //console.log("ChatPage: loading script...");
+
+        var messageData = {}; // The data that is sent along with the message. 
+        var typing = false; // True while the user is typing.
+        var typingTimerDuration = 1; // How long to wait before ending typing, in seconds.
+        var typingTimer = null; // The timer to end typing.
+        var $ChatLog; // The scrolling chat log.
+        var $ChatInputText; // The text field for entering text.
+
+        // Recreate the lines in chatLog as the DOM in $ChatLog.
+        function updateChatLog() {
+            $ChatLog.html('');
+            for (var i = 0, n = chatLog.length; i < n; i++) {
+                var a = chatLog[i];
+                var avatarID = a[0];
+                var displayName = a[1];
+                var message = a[2];
+                var data = a[3];
+                //console.log("updateChatLog", i, a, displayName, message);
+                if (avatarID) {
+                    receiveChatMessage(avatarID, displayName, message, data);
+                } else {
+                    logMessage(message);
+                }
+            }
+        }
+
+        // Call this no every keystroke.
+        function type() {
+            beginTyping();
+            handleType();
+        }
+
+        // Reset the typing timer, and notify if we're starting.
+        function beginTyping() {
+            if (typingTimer) {
+                clearTimeout(typingTimer);
+            }
+
+            typingTimer = setTimeout(function() {
+                typing = false;
+                handleEndTyping();
+            }, typingTimerDuration * 1000);
+
+            if (typing) {
+                return;
+            }
+
+            typing = true;
+            handleBeginTyping();
+        }
+
+        // Clear the typing timer and notify if we're finished.
+        function endTyping() {
+            if (typingTimer) {
+                clearTimeout(typingTimer);
+                typingTimer = null;
+            }
+
+            if (!typing) {
+                return;
+            }
+
+            typing = false;
+            handleEndTyping();
+        }
+
+        // Notify the interface script on every keystroke.
+        function handleType() {
+            EventBridge.emitWebEvent(
+                JSON.stringify({
+                    type: "Type"
+                }));
+        }
+
+        // Notify the interface script when we begin typing.
+        function handleBeginTyping() {
+            EventBridge.emitWebEvent(
+                JSON.stringify({
+                    type: "BeginTyping"
+                }));
+        }
+
+        // Notify the interface script when we end typing.
+        function handleEndTyping() {
+            EventBridge.emitWebEvent(
+                JSON.stringify({
+                    type: "EndTyping"
+                }));
+        }
+
+        // Append a chat message to $ChatLog.
+        function receiveChatMessage(avatarID, displayName, message, data) {
+            var $logLine =
+                $('<div/>')
+                    .addClass('ChatLogLine')
+                    .data('chat-avatarID', avatarID)
+                    .data('chat-displayName', displayName)
+                    .data('chat-message', message)
+                    .data('chat-data', data)
+                    .appendTo($ChatLog);
+            var $timestamp = $('<span/>').addClass('TimeStamp').text((new Date()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})).appendTo($logLine);
+            var $logLineDisplayName =
+                $('<span/>')
+                    .addClass('ChatLogLineDisplayName')
+                    .text(displayName + ': ')
+                    .on('mouseenter', function(event) {
+                        identifyAvatar(avatarID);
+                        //event.cancelBubble();
+                        $logLineDisplayName.css({
+                            color: '#00ff00',
+                            'text-decoration': 'underline'
+                        });
+                    })
+                    .on('mouseleave', function(event) {
+                        unidentifyAvatar(avatarID);
+                        //event.cancelBubble();
+                        $logLineDisplayName.css({
+                            color: 'white',
+                            'text-decoration': 'none'
+                        });
+                    })
+                    .click(function(event) {
+                        faceAvatar(avatarID, displayName);
+                        //event.cancelBubble();
+                    })
+                    .appendTo($logLine);
+            var $logLineMessage =
+                $('<span/>')
+                    .addClass('ChatLogLineMessage')
+                    .text(message)
+                    .appendTo($logLine);
+        }
+
+        // Append a log message to $ChatLog.
+        function logMessage(message) {
+            var $logLine =
+                $('<div/>')
+                    .addClass('LogLogLine')
+                    .data('chat-message', message)
+                    .appendTo($ChatLog);
+            var $logLineMessage =
+                $('<span/>')
+                    .addClass('LogLogLineMessage')
+                    .text(message)
+                    .appendTo($logLine);
+        }
+
+        // Scroll $ChatLog so the last line is visible.
+        function scrollChatLog() {
+            var $logLine = $ChatLog.children().last();
+            if (!$logLine || !$logLine.length) {
+                return;
+            }
+            var chatLogHeight = $ChatLog.outerHeight(true);
+            var logLineTop = ($logLine.offset().top - $ChatLog.offset().top);
+            var logLineBottom = logLineTop + $logLine.outerHeight(true);
+            var scrollUp = logLineBottom - chatLogHeight;
+            if (scrollUp > 0) {
+                $ChatLog.scrollTop($ChatLog.scrollTop() + scrollUp);
+            }
+        }
+
+        // Tell the interface script we have initialized.
+        function emitReadyEvent() {
+            EventBridge.emitWebEvent(
+                JSON.stringify({
+                    type: "Ready"
+                }));
+        }
+
+        // The user entered an empty chat message.
+        function emptyChatMessage() {
+            EventBridge.emitWebEvent(
+                JSON.stringify({
+                    type: "EmptyChatMessage",
+                    data: null
+                }));
+        }
+
+        // The user entered a non-empty chat message.
+        function handleChatMessage(message, data) {
+            //console.log("handleChatMessage", message);
+            EventBridge.emitWebEvent(
+                JSON.stringify({
+                    type: "HandleChatMessage",
+                    message: message,
+                    data: data
+                }));
+        }
+
+        // Clear the chat log, of course.
+        function clearChatLog() {
+            EventBridge.emitWebEvent(
+                JSON.stringify({
+                    type: "ClearChatLog"
+                }));
+        }
+
+        // Identify an avatar.
+        function identifyAvatar(avatarID) {
+            EventBridge.emitWebEvent(
+                JSON.stringify({
+                    type: "IdentifyAvatar",
+                    avatarID: avatarID
+                }));
+        }
+
+        // Stop identifying an avatar.
+        function unidentifyAvatar(avatarID) {
+            EventBridge.emitWebEvent(
+                JSON.stringify({
+                    type: "UnidentifyAvatar",
+                    avatarID: avatarID
+                }));
+        }
+
+        // Face an avatar.
+        function faceAvatar(avatarID, displayName) {
+            EventBridge.emitWebEvent(
+                JSON.stringify({
+                    type: "FaceAvatar",
+                    avatarID: avatarID,
+                    displayName: displayName
+                }));
+        }
+
+        // Let's get this show on the road!
+        function main() {
+
+            //console.log("ChatPage: main");
+
+            $ChatLog = $('#ChatLog');
+            $ChatInputText = $('#ChatInputText');
+
+            // Whenever the chat log resizes, or the input text gets or loses focus, 
+            // scroll the chat log to the last line.
+            $ChatLog.on('resize', function(event) {
+                //console.log("ChatLog resize", $ChatLog, event);
+                scrollChatLog();
+            });
+            $ChatInputText.on('focus blur', function(event) {
+                //console.log("ChatInputText focus blur", $ChatInputText, event);
+                scrollChatLog();
+            });
+
+            // Track when the user is typing, and handle the message when the user hits return.
+            $ChatInputText.on('keydown', function(event) {
+                type();
+                if (event.keyCode == 13) {
+                    var message = $ChatInputText.val().substr(0, 256);
+                    $ChatInputText.val('');
+                    if (message == '') {
+                        emptyChatMessage();
+                    } else {
+                        handleChatMessage(message, messageData);
+                    }
+                    endTyping();
+                }
+            });
+
+            $('#SendMessage').on('click', function() {
+                $ChatInputText.trigger($.Event('keydown', { keyCode: 13 }));
+                $ChatInputText.focus();
+            });
+            $('#ClearLog').on('click', function() { clearChatLog(); });
+            var fontSize = 15;
+            $('#FontDown').on('click', function() { fontSize = Math.max(12,fontSize-1); document.documentElement.style.setProperty('--font',fontSize+'px'); });
+            $('#FontUp').on('click', function() { fontSize = Math.min(22,fontSize+1); document.documentElement.style.setProperty('--font',fontSize+'px'); });
+            // Start out with the input text in focus.
+            $ChatInputText.focus();
+
+            // Hook up a handler for events that come from hifi.
+            EventBridge.scriptEventReceived.connect(function (message) {
+
+                //console.log("ChatPage: main: scriptEventReceived", message);
+
+                var messageData = JSON.parse(message);
+                var messageType = messageData['type'];
+
+                switch (messageType) {
+
+                    case "Update":
+                        chatLog = messageData['chatLog'];
+                        updateChatLog();
+                        scrollChatLog();
+                        break;
+
+                    case "ReceiveChatMessage":
+                        receiveChatMessage(messageData['avatarID'], messageData['displayName'], messageData['message'], messageData['data']);
+                        scrollChatLog();
+                        break;
+
+                    case "LogMessage":
+                        logMessage(messageData['message']);
+                        scrollChatLog();
+                        break;
+
+                    default:
+                        console.log("WEB: received unexpected script event message: " + message);
+                        break;
+
+                }
+            });
+
+            emitReadyEvent();
+        }
+
+        // Start up once the document is loaded.
+        $(document).ready(main);
+
+    </script>
+
+</html>
