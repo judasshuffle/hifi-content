@@ -953,10 +953,31 @@
     }
 
     // Start up the chat application.
+    // Occasional local-only ghost easter egg. Does not broadcast or impersonate users.
+    var ghostTimer = null;
+    var ghostLines = [
+        "The Ghost: I remember when this place was crowded.",
+        "The Ghost: Did someone just leave?",
+        "The Ghost: These walls have heard other conversations.",
+        "The Ghost: I could have sworn there was another avatar here.",
+        "The Ghost: Some of the old worlds never really went away.",
+        "The Ghost: ...is anyone still listening?",
+        "The Ghost: I recognise this place. It used to have another name.",
+        "The Ghost: Strange. I thought that door was somewhere else."
+    ];
+    function queueGhost() {
+        // Between 35 and 95 minutes. Only this viewer sees these messages.
+        ghostTimer = Script.setTimeout(function () {
+            logMessage(ghostLines[Math.floor(Math.random() * ghostLines.length)], null);
+            queueGhost();
+        }, (35 + Math.floor(Math.random() * 61)) * 60 * 1000);
+    }
+
     function startUp() {
         //print("startUp");
 
         loadSettings();
+        queueGhost();
 
         tabletButton = tablet.addButton({
             icon: tabletButtonIcon,
@@ -981,6 +1002,7 @@
 
     // Shut down the chat application.
     function shutDown() {
+        if (ghostTimer !== null) { Script.clearTimeout(ghostTimer); ghostTimer = null; }
         //print("shutDown");
 
         popDownSpeechBubble();
