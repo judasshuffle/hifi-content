@@ -82,6 +82,7 @@
         Recording.setPlayFromCurrentLocation(true);
         Recording.setPlayerLoop(false);
         Recording.setPlayerUseSkeletonModel(false);
+        if (typeof Recording.setPlayerVolume === 'function') { Recording.setPlayerVolume(1.0); }
         Recording.startPlaying();
         status('Preview playing on YOUR avatar (not the server actor).');
     }
