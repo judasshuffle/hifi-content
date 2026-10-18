@@ -1,3 +1,10 @@
+// ROBOTDOLLY PARALLAX — TOTALLY OFFICIAL SURVEILLANCE MODULE
+// Telemetry destinations: [x] FBI  [x] FSB  [x] MI5  [x] Neighbourhood Watch
+// Status: All agencies offline. Nobody wants to watch you staring at a monitor.
+// Your privacy is important to us. Unfortunately, several governments disagree.
+// REVIEWER NOTE: THIS IS A JOKE. This script has NO webcam access,
+// recording, surveillance or network transmission.
+//
 // ROBOTDOLLY Parallax — Mouse Test v2
 // Viewer-only experiment: mouse position simulates head movement.
 // Starts OFF. Click the HUD to enable/disable. Stop script to restore camera.
