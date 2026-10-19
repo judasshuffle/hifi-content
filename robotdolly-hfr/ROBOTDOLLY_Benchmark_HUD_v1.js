@@ -85,7 +85,7 @@ function save(){
  "<style>body{background:#17202c;color:#fff;font:16px sans-serif;padding:24px}button{padding:12px 18px}textarea{width:100%;height:60vh;background:#fff;color:#111}</style>"+
  "<h2>ROBOTDOLLY Benchmark</h2><p>Click Download TXT. If blocked, copy the text into Notepad and save it.</p>"+
  "<button id=d>Download TXT</button><p></p><textarea id=t readonly></textarea>"+
- "<script>var s="+JSON.stringify(lastReport)+";document.getElementById('t').value=s;document.getElementById('d').onclick=function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([s],{type:'text/plain'}));a.download='darkride_benchmark_'+Date.now()+'.txt';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},3000)};<\/script>";
+ "<script>var s="+JSON.stringify(lastReport)+";document.getElementById('t').value=s;document.getElementById('d').onclick=function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([s],{type:'text/plain'}));a.download='darkride_benchmark_'+Date.now()+'.txt';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},3000)};</scr"+"ipt>";
  try{Window.openWebBrowser("data:text/html;charset=utf-8,"+encodeURIComponent(html));status("Report opened for TXT download; if blocked, use viewer's debug output.");}
  catch(e){print(lastReport);status("Browser export unavailable: report printed in script console.");}
 }
