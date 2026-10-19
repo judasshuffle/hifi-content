@@ -5,6 +5,7 @@
 "use strict";
 var ids=[], clicks=[], x=35,y=95, statusId, running=false, timer=null, samples=[], began=0;
 var landmarks=[], selected=0, duration=60, target="1920x1080", lastReport="";
+var MADDERS_HOME="hifi://6ad0c6f9-5063-1000-8000-0826a9c45e66/-8.9081e-07,-1.7792,-8.90344e-07/0,0,0,1";
 var pref="ROBOTDOLLY_BENCH_V1_";
 function setting(k,defaultValue){try{return Settings.getValue(pref+k,defaultValue);}catch(e){return defaultValue;}}
 function saveSetting(k,v){try{Settings.setValue(pref+k,v);}catch(e){}}
@@ -23,7 +24,7 @@ function refreshViewerLandmarks(){
    if(typeof LocationBookmarks==="undefined" || typeof LocationBookmarks.getBookmarks!=="function")return false;
    var bookmarks=LocationBookmarks.getBookmarks();
    if(!bookmarks || !Object.keys(bookmarks).length)return false;
-   landmarks=Object.keys(bookmarks).sort().map(function(name){return {name:name,url:String(bookmarks[name]),viewerBookmark:true};});
+   landmarks=[{name:"Madders Home",url:MADDERS_HOME,viewerBookmark:true}].concat(Object.keys(bookmarks).sort().filter(function(n){return n!=="Madders Home";}).map(function(name){return {name:name,url:String(bookmarks[name]),viewerBookmark:true};}));
    if(selected>landmarks.length)selected=0;
    return true;
  }catch(e){print("[ROBOTDOLLY BENCH] Bookmarks API unavailable: "+e);return false;}
@@ -94,17 +95,16 @@ function stop(){
 function build(){var s=Window.prompt("DarkRide build ID or Git hash:",String(setting("build","UNKNOWN")));if(s===null)return;saveSetting("build",s.trim()||"UNKNOWN");update();}
 function save(){
  if(!lastReport){status("Run a test first.");return;}
- // Browser-mediated export: the page offers a Save TXT button and displays a fallback copyable report.
- // This avoids assuming Window.save() can write text (it only returns a path).
- var html="<!doctype html><meta charset=utf-8><title>ROBOTDOLLY Benchmark Report</title>"+
- "<style>body{background:#17202c;color:#fff;font:16px sans-serif;padding:24px}button{padding:12px 18px}textarea{width:100%;height:60vh;background:#fff;color:#111}</style>"+
- "<h2>ROBOTDOLLY Benchmark</h2><p>Click Download TXT. If blocked, copy the text into Notepad and save it.</p>"+
- "<button id=d>Download TXT</button><p></p><textarea id=t readonly></textarea>"+
- "<script>var s="+JSON.stringify(lastReport)+";document.getElementById('t').value=s;document.getElementById('d').onclick=function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([s],{type:'text/plain'}));a.download='darkride_benchmark_'+Date.now()+'.txt';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},3000)};</scr"+"ipt>";
- try{Window.openWebBrowser("data:text/html;charset=utf-8,"+encodeURIComponent(html));status("Report opened for TXT download; if blocked, use viewer's debug output.");}
- catch(e){print(lastReport);status("Browser export unavailable: report printed in script console.");}
+ try{
+   Window.copyToClipboard(lastReport);
+   status("Report copied to Windows clipboard. Open Notepad, Ctrl+V, Save As .txt.");
+   Window.alert("Benchmark report copied to clipboard. Open Notepad, press Ctrl+V, then save as .txt. No browser or helper needed.");
+ }catch(e){print(lastReport);status("Clipboard unavailable. Report printed in script console: "+e);}
 }
 function update(){try{Overlays.editOverlay(infoId,{text:"Landmark: "+(selected?landmarks[selected-1].name:"CURRENT")+"\nTarget: "+target+" (manual) | Build: "+setting("build","UNKNOWN")});}catch(e){}}
+// Madders home is the initial fixed location; other saved landmarks remain selectable.
+if(!landmarks.some(function(l){return l.name==="Madders Home";}))landmarks.unshift({name:"Madders Home",url:MADDERS_HOME,viewerBookmark:true});
+selected=1;
 var infoId=box("",x,y+42,425,58,{red:31,green:38,blue:52},12);
 box("ROBOTDOLLY / BENCHMARK v1",x,y,425,39,{red:17,green:92,blue:130},17);
 button("PICK LANDMARK",x,y+108,136,choose);button("GO TO MARK",x+143,y+108,120,gotoLandmark);
@@ -115,5 +115,5 @@ statusId=box("Ready. Use fixed viewpoint, matching settings, and warm assets.",x
 function click(event){if(!event.isLeftButton)return;var id=Overlays.getOverlayAtPoint({x:event.x,y:event.y});for(var i=0;i<clicks.length;i++)if(id===clicks[i].id){try{clicks[i].cb();}catch(e){status("Error: "+e);}return;}}
 Controller.mousePressEvent.connect(click);
 Script.scriptEnding.connect(function(){if(timer!==null)Script.clearInterval(timer);Controller.mousePressEvent.disconnect(click);ids.forEach(function(id){Overlays.deleteOverlay(id);});});
-update();status("Ready: choose landmark, set size, set build, RUN, SAVE.");
+update();status("Madders Home selected. Use Woody avatar. SAVE copies TXT report to clipboard.");
 }());
