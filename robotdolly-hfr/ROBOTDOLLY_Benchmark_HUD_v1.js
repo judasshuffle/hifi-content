@@ -18,22 +18,37 @@ function status(t){print("[ROBOTDOLLY BENCH] "+t);try{Overlays.editOverlay(statu
 function landmarkURL(){try{return String(location.href||"");}catch(e){return "";}}
 function current(){var p=MyAvatar.position;return {url:landmarkURL(),x:p.x,y:p.y,z:p.z,yaw:Quat.safeEulerAngles(MyAvatar.orientation).y};}
 function label(l){return l ? l.name+" ["+l.url+"]" : "Current location";}
+function refreshViewerLandmarks(){
+ try{
+   if(typeof LocationBookmarks==="undefined" || typeof LocationBookmarks.getBookmarks!=="function")return false;
+   var bookmarks=LocationBookmarks.getBookmarks();
+   if(!bookmarks || !Object.keys(bookmarks).length)return false;
+   landmarks=Object.keys(bookmarks).sort().map(function(name){return {name:name,url:String(bookmarks[name]),viewerBookmark:true};});
+   if(selected>landmarks.length)selected=0;
+   return true;
+ }catch(e){print("[ROBOTDOLLY BENCH] Bookmarks API unavailable: "+e);return false;}
+}
 function choose(){
- var list=landmarks.map(function(l,i){return (i+1)+". "+l.name;}).join("\n");
- var value=Window.prompt("Enter a landmark number, or type NEW to add current position:\n0. CURRENT LOCATION\n"+list, String(selected));
+ var available=refreshViewerLandmarks();
+ var list=landmarks.map(function(l,i){return (i+1)+". "+l.name;}).join("\\n");
+ if(!available)status("Viewer landmarks unavailable (API absent or permission denied); using own saved test locations.");
+ var value=Window.prompt("Select a "+(available?"DarkRide saved landmark":"benchmark location")+" by number, or NEW for current position:\\n0. CURRENT LOCATION\\n"+(list||"(No locations accessible)"),String(selected));
  if(value===null)return;
  if(/^new$/i.test(value.trim())){
-   var name=Window.prompt("Name this benchmark landmark:","Test "+(landmarks.length+1));if(!name)return;
+   var name=Window.prompt("Name this benchmark location:","Test "+(landmarks.length+1));if(!name)return;
    var l=current();l.name=name;landmarks.push(l);selected=landmarks.length;saveSetting("landmarks",JSON.stringify(landmarks));
- }else{var n=parseInt(value,10);if(isNaN(n)||n<0||n>landmarks.length){status("Invalid landmark.");return;}selected=n;}
+ }else{var n=parseInt(value,10);if(isNaN(n)||n<0||n>landmarks.length){status("Invalid location number.");return;}selected=n;}
  update();
 }
 function gotoLandmark(){
  if(selected<1){status("At current location. Set a fixed camera angle before testing.");return;}
  var l=landmarks[selected-1];
- try{if(l.url)Window.location=l.url;}catch(e){}
- try{if(l.x!==undefined)MyAvatar.position={x:l.x,y:l.y,z:l.z};}catch(e){status("Automatic teleport unavailable. Please use your bookmark.");return;}
- status("Landmark requested. Let assets finish loading before RUN.");
+ try{
+   if(l.url && typeof location!=="undefined" && typeof location.handleLookupString==="function"){location.handleLookupString(l.url);status("Travel requested; wait until scene finishes loading.");return;}
+   if(l.url){Window.location=l.url;status("Travel requested; let the scene load.");return;}
+ }catch(e){status("Could not travel automatically: "+e);}
+ if(l.x!==undefined){try{MyAvatar.position={x:l.x,y:l.y,z:l.z};status("Local position requested; verify before recording.");return;}catch(e){}}
+ status("Automatic travel unavailable. Open this landmark in the viewer.");
 }
 function resolution(){
  var v=Window.prompt("Target render size (1920x1080, 2560x1440, 3840x2160). HUD cannot change actual display settings:",target);
