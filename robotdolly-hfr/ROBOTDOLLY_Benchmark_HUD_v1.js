@@ -1,4 +1,4 @@
-// ROBOTDOLLY BENCHMARK HUD v1 (experimental), for DarkRide / High Fidelity Interface.
+// ROBOTDOLLY BENCHMARK HUD v1.2 (experimental), for DarkRide / High Fidelity Interface.
 // ONE URL, no Node.js. Uses a browser-assisted text download, NOT Recording.saveRecording.
 // Caveat: browser download from data: URL depends on DarkRide build; test before relying on it.
 (function () {
@@ -69,6 +69,8 @@ function sample(){
 }
 function start(){
  if(running){stop();return;}
+ var actual=Window.innerWidth+"x"+Window.innerHeight;
+ if(actual!==target){Window.alert("Benchmark target "+target+" differs from current drawable area "+actual+". Resize DarkRide before recording for comparable results.");return;}
  samples=[];running=true;began=Date.now();status("Recording; keep viewpoint fixed.");
  timer=Script.setInterval(sample,1000);sample();
 }
@@ -80,7 +82,7 @@ function stop(){
  var lines=["ROBOTDOLLY DARKRIDE BENCHMARK v1","Recorded UTC: "+new Date().toISOString(),
  "Viewer build (manual): "+String(setting("build","UNKNOWN")),"Landmark: "+label(l),
  "Current address: "+landmarkURL(),"Target resolution: "+target+" (NOT verified or enforced)",
- "Actual screen resolution: UNAVAILABLE FROM SCRIPT (set and verify manually)",
+ "Actual viewer drawable area: "+Window.innerWidth+"x"+Window.innerHeight+" (verify render scale separately)",
  "Hardware CPU/GPU/RAM: UNAVAILABLE FROM SCRIPT (fill manually)",
  "Graphics settings and FOV: VERIFY MANUALLY","Avatar: use identical Woody assets for comparison",
  "Duration seconds: "+((Date.now()-began)/1000).toFixed(1),
@@ -106,14 +108,14 @@ function update(){try{Overlays.editOverlay(infoId,{text:"Landmark: "+(selected?l
 if(!landmarks.some(function(l){return l.name==="Madders Home";}))landmarks.unshift({name:"Madders Home",url:MADDERS_HOME,viewerBookmark:true});
 selected=1;
 var infoId=box("",x,y+42,425,58,{red:31,green:38,blue:52},12);
-box("ROBOTDOLLY / BENCHMARK v1",x,y,425,39,{red:17,green:92,blue:130},17);
+box("ROBOTDOLLY / BENCHMARK v1.2",x,y,425,39,{red:17,green:92,blue:130},17);
 button("PICK LANDMARK",x,y+108,136,choose);button("GO TO MARK",x+143,y+108,120,gotoLandmark);
 button("SET SIZE",x+270,y+108,154,resolution);
 button("SET BUILD",x,y+152,136,build);button("RUN / STOP",x+143,y+152,120,start);
-button("SAVE TXT",x+270,y+152,154,save);
+button("COPY REPORT",x+270,y+152,154,save);
 statusId=box("Ready. Use fixed viewpoint, matching settings, and warm assets.",x,y+197,425,62,{red:32,green:39,blue:53},12);
 function click(event){if(!event.isLeftButton)return;var id=Overlays.getOverlayAtPoint({x:event.x,y:event.y});for(var i=0;i<clicks.length;i++)if(id===clicks[i].id){try{clicks[i].cb();}catch(e){status("Error: "+e);}return;}}
 Controller.mousePressEvent.connect(click);
 Script.scriptEnding.connect(function(){if(timer!==null)Script.clearInterval(timer);Controller.mousePressEvent.disconnect(click);ids.forEach(function(id){Overlays.deleteOverlay(id);});});
-update();status("Madders Home selected. Use Woody avatar. SAVE copies TXT report to clipboard.");
+update();status("HUD v1.2 loaded. Madders Home; Woody avatar. COPY REPORT uses clipboard.");
 }());
