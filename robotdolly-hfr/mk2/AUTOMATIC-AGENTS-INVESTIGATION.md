@@ -1,6 +1,6 @@
 # Automatic agents: investigation
 
-Status: the requested on-demand allocator is **not implemented**. This investigation is based on local DarkRide source trees `C:/Projects/darkride-hfr-playback` and `C:/Projects/darkride-release-10-18`. The precise source revision in GreatATuin's `darkride-synology:1.1-beta-theatre-multi` image has not been confirmed. No request was sent to GreatATuin and no server configuration was changed.
+Status: the requested on-demand allocator is **not implemented**. A shared persistent worker script was subsequently added as an alternative; it reserves workers and has only been mock-tested. This investigation is based on local DarkRide source trees `C:/Projects/darkride-hfr-playback` and `C:/Projects/darkride-release-10-18`. The precise source revision in GreatATuin's `darkride-synology:1.1-beta-theatre-multi` image has not been confirmed. No request was sent to GreatATuin and no server configuration was changed.
 
 ## Existing mechanisms
 
@@ -16,8 +16,8 @@ These gaps prevent a robust implementation of allocate, cancel and release with 
 
 One MK1 assignment plus five concurrent MK2 performers requires **six** agent workers. With the present `--max 5`, at most four MK2 performers can run alongside MK1, assuming no other agent assignments. An additional controller implemented as an agent would consume another worker; an entity server script does not consume a type-2 agent slot, although its reliability and permissions require live verification. Supporting five MK2 performers alongside MK1 requires additional capacity or stopping an existing agent; neither change has been made.
 
-The smallest configuration change that avoids five distinct script entries would be one persistent worker script configured with multiple copies, with new code to claim distinct logical actor slots and report leases to the existing entity controller. This is a **proposed design, not an existing feature**: the current `actor.js` depends on an explicitly numbered wrapper and cannot safely be registered as multiple copies. It would reserve workers while idle rather than dynamically return them to the pool. Slot claiming, duplicate handling, crash recovery, show restoration and audio must be implemented and tested before recommending it. With MK1 left running on the current pool, configure at most four copies.
+One persistent `worker.js` configured with multiple copies now claims distinct logical slots from the entity controller and loads `actor.js` after the claim. It reserves workers while idle rather than dynamically returning them to the pool. Slot claiming and lease expiry have mock tests; duplicate handling, crash recovery, show restoration and audio still require live testing. With MK1 left running on the current pool, configure at most four copies. Do not mix the numbered wrappers with shared workers.
 
 For true on-demand allocation and release, a future server-side extension or trusted local service should expose a narrowly authorized operation that creates a uniquely identified assignment, cancels it even while queued, releases a running worker without affecting MK1, and reports queue and capacity state. It also needs durable desired-show state, idempotent requests and restart reconciliation. Such a service would require separate installation and careful authentication; it is not an existing DarkRide scripting API and has not been built.
 
-The current MK2 installation remains the separately numbered assignments documented in README.md. No implementation change has been made to MK1 or MK2 playback.
+Installation and rollback are documented in README.md. MK1 was not modified.
