@@ -24,16 +24,16 @@ function signal() { return { connect(fn) { receivers.push(fn); }, disconnect(fn)
 const messages = { messageReceived: signal(), subscribe() {}, unsubscribe() {}, sendMessage(ch, text) { events.push(JSON.parse(text)); receivers.slice().forEach(fn => fn(ch, text)); } };
 function send(m) { messages.sendMessage(channel, JSON.stringify(Object.assign({ source: 'controller', token }, m))); }
 function agent(slot) {
-    let pending = [], state = { playing: false, starts: 0 };
+    let pending = [], state = { playing: false, starts: 0 }, avatar = { setAvatarEntityData() { state.entitiesCleared = true; }, setAttachmentData() { state.attachmentsCleared = true; } };
     let recording = {
         stopPlaying() { state.playing = false; }, loadRecording(url, cb) { pending.push({ url, cb }); },
         setPlayFromCurrentLocation(v) { state.current = v; }, setPlayerLoop(v) { state.loop = v; },
-        setPlayerVolume(v) { state.volume = v; }, setPlayerUseDisplayName() {}, setPlayerUseSkeletonModel() {},
+        setPlayerVolume(v) { state.volume = v; }, setPlayerUseDisplayName() {}, setPlayerUseSkeletonModel(v) { state.recordedModel = v; },
         startPlaying() { state.playing = true; state.starts++; }
     };
     vm.runInNewContext(actorSource, { ROBOTDOLLY_MK2_SLOT: slot, Messages: messages, Recording: recording,
-        Agent: {}, Avatar: {}, Script: { scriptEnding: { connect() {} } }, isFinite, JSON, Math });
-    return { state, pending, finish(ok = true) { assert(pending.length); pending.shift().cb(ok); } };
+        Agent: {}, Avatar: avatar, Script: { scriptEnding: { connect() {} } }, isFinite, JSON, Math });
+    return { state, avatar, pending, finish(ok = true) { assert(pending.length); pending.shift().cb(ok); } };
 }
 function config(n) { return { url: 'atp:/actor' + n + '.hfr', placement: 'original', volume: 0.8, loop: true }; }
 const a = agent(1), b = agent(2);
@@ -46,9 +46,10 @@ const more = [agent(3), agent(4), agent(5)];
 more.forEach((p, i) => { send({ slot: i + 3, command: 'configure', config: config(i + 3) }); send({ slot: i + 3, command: 'play' }); p.finish(); });
 send({ slot: 2, command: 'play' }); assert([a, b, ...more].every(p => p.state.playing));
 const newConfig = config(9); newConfig.placement = 'position'; newConfig.position = { x: 1, y: 2, z: 3 };
+newConfig.avatarModelURL = 'https://example.invalid/original.fst';
 send({ slot: 1, command: 'configure', config: newConfig }); send({ slot: 1, command: 'play' }); send({ slot: 1, command: 'stop' }); a.finish();
-assert(!a.state.playing); send({ slot: 1, command: 'play' }); assert(a.state.playing && a.state.current);
-send({ slot: 1, command: 'configure', config: config(10) }); send({ slot: 1, command: 'configure', config: config(11) }); send({ slot: 1, command: 'play' }); a.finish(); assert.strictEqual(a.pending[0].url, 'atp:/actor11.hfr'); a.finish(); assert(a.state.playing);
+assert(!a.state.playing); send({ slot: 1, command: 'play' }); assert(a.state.playing && a.state.current); assert.strictEqual(a.avatar.skeletonModelURL, newConfig.avatarModelURL); assert.strictEqual(a.state.recordedModel, true); assert(a.state.entitiesCleared && a.state.attachmentsCleared);
+send({ slot: 1, command: 'configure', config: config(10) }); send({ slot: 1, command: 'configure', config: config(11) }); send({ slot: 1, command: 'play' }); a.finish(); assert.strictEqual(a.pending[0].url, 'atp:/actor11.hfr'); a.finish(); assert(a.state.playing); assert.strictEqual(a.avatar.skeletonModelURL, '');
 send({ slot: 1, command: 'configure', config: { url: 'file:///bad', placement: 'original', volume: 1 } }); assert(a.state.playing);
 let userData = JSON.stringify({ other: 123 });
 const entity = { getEntityProperties() { return { userData }; }, editEntity(id, p) { userData = p.userData; } };

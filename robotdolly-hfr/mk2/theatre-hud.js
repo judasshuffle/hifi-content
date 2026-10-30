@@ -4,7 +4,7 @@
     var channel = 'ROBOTDOLLY_MK2_GREATATUIN_TEST_V1', token = 'PUBLIC-GREATATUIN-MK2-TEST-V1';
     var ids = [], buttons = [], actors = [null, null, null, null, null], statuses = ['Unknown', 'Unknown', 'Unknown', 'Unknown', 'Unknown'];
     var selected = 0, restore = false, showLoop = false, statusId, castId, selectionId, loopId, restoreId;
-    var library = null, recording = false, recordingReady = false, startedAt = 0, duration = 0, uploading = false, uploadTimer, libraryRequest = '', libraryURL = '', uploadGeneration = 0;
+    var library = null, recording = false, recordingReady = false, startedAt = 0, duration = 0, recordedModelURL = '', uploading = false, uploadTimer, libraryRequest = '', libraryURL = '', uploadGeneration = 0;
     var menuIds = [], menuPage = 0;
     var x = 30, y = 80, bg = { red: 29, green: 34, blue: 43 }, bar = { red: 18, green: 22, blue: 29 }, accent = { red: 39, green: 88, blue: 96 };
     function text(label, px, py, w, h, color, size) {
@@ -25,7 +25,13 @@
     function actor(command, value, index) { send({ slot: (index === undefined ? selected : index) + 1, command: command, config: value, value: value }); }
     function initial() { return actors[selected] || { url: '', placement: 'original', position: null, volume: 1, loop: showLoop }; }
     function configure() { if (!actors[selected] || !actors[selected].url) { status('Choose a recording first'); return; } actor('configure', actors[selected]); }
-    function record() { if (uploading || recording) { status('Finish the current recording or upload first'); return; } Recording.startRecording(); recording = true; recordingReady = false; startedAt = Date.now(); status('Recording your avatar and microphone'); }
+    function record() {
+        if (uploading || recording) { status('Finish the current recording or upload first'); return; }
+        var model = String(MyAvatar.skeletonModelURL || '');
+        if (model.length > 2048) { status('Avatar model URL is too long to save'); return; }
+        Recording.startRecording(); recordedModelURL = model; recording = true; recordingReady = false; startedAt = Date.now();
+        status(/^(atp:|https?:\/\/)/i.test(model) ? 'Recording your avatar and microphone' : 'Recording; avatar model URL may not be accessible to the server');
+    }
     function stopRecord() { if (!recording) { status('No recording is in progress'); return; } Recording.stopRecording(); recording = false; recordingReady = true; duration = Math.max(0, (Date.now() - startedAt) / 1000); status('Recording stopped. Choose Save Recording.'); }
     function saveRecording() {
         if (!recordingReady || recording || uploading) { status('Stop a new recording before saving'); return; }
@@ -34,8 +40,8 @@
         if (!name || name.length > 80) { status('Enter a name of up to 80 characters'); return; }
         if (library.some(function (e) { return e.name.toLowerCase() === name.toLowerCase(); })) { status('That recording name already exists'); return; }
         if (typeof Recording.saveRecordingToAsset !== 'function' || typeof Assets === 'undefined' || typeof Assets.setMapping !== 'function') { status('This viewer does not provide ATP recording upload'); return; }
-        uploading = true; var generation = ++uploadGeneration; status('Uploading recording to ATP...');
-        uploadTimer = Script.setTimeout(function () { if (uploading && generation === uploadGeneration) { uploading = false; libraryRequest = ''; status('Upload or library save timed out. Check asset permissions and retry.'); } }, 60000);
+        uploading = true; libraryURL = ''; var generation = ++uploadGeneration; status('Uploading recording to ATP...');
+        uploadTimer = Script.setTimeout(function () { if (uploading && generation === uploadGeneration) { uploading = false; libraryRequest = ''; status('Upload or library save timed out.' + (libraryURL ? ' ATP: ' + libraryURL : ' Check asset permissions and retry.')); } }, 60000);
         try {
             var started = Recording.saveRecordingToAsset(function (raw) {
                 if (!uploading || generation !== uploadGeneration) { return; }
@@ -47,7 +53,7 @@
                     if (!uploading || generation !== uploadGeneration) { return; }
                     if (error) { uploading = false; Script.clearTimeout(uploadTimer); status('ATP mapping failed: ' + error); return; }
                     libraryRequest = String(Date.now()) + '-' + Math.random();
-                    send({ target: 'library', command: 'add', request: libraryRequest, item: { name: name, url: libraryURL, created: new Date().toISOString(), durationSeconds: duration, format: 'hfr' } });
+                    send({ target: 'library', command: 'add', request: libraryRequest, item: { name: name, url: libraryURL, created: new Date().toISOString(), durationSeconds: duration, format: 'hfr', avatarModelURL: recordedModelURL } });
                     status('Upload mapped. Saving library entry...');
                 }); } catch (e) { uploading = false; Script.clearTimeout(uploadTimer); status('ATP mapping error: ' + e); }
             });
@@ -58,7 +64,7 @@
         var c = initial(), url = Window.prompt('Recording URL (atp: or https:)', c.url);
         if (!url) { return; } url = url.trim();
         if (!/^(atp:|https?:\/\/)/i.test(url) || url.length >= 2048) { status('Enter an atp: or HTTP(S) recording URL'); return; }
-        c.url = url; actors[selected] = c; configure(); refresh();
+        c.url = url; c.avatarModelURL = ''; actors[selected] = c; configure(); refresh();
     }
     function closeMenu() { menuIds.forEach(function (id) { Overlays.deleteOverlay(id); ids = ids.filter(function (x) { return x !== id; }); buttons = buttons.filter(function (b) { return b.id !== id; }); }); menuIds = []; }
     function menuButton(label, px, py, w, fn) { var id = button(label, px, py, w, fn); menuIds.push(id); }
@@ -69,7 +75,7 @@
         var start = menuPage * 6;
         library.slice(start, start + 6).forEach(function (entry, i) {
             menuButton(entry.name, x + 525, y + 141 + i * 35, 220, function () {
-                var c = initial(); c.url = entry.url; actors[selected] = c; closeMenu(); configure(); refresh(); status('Selected ' + entry.name);
+                var c = initial(); c.url = entry.url; c.avatarModelURL = entry.avatarModelURL || ''; actors[selected] = c; closeMenu(); configure(); refresh(); status('Selected ' + entry.name);
             });
         });
         menuButton('Previous', x + 525, y + 354, 70, function () { menuPage = Math.max(0, menuPage - 1); libraryMenu(); });
@@ -142,6 +148,6 @@
     button('Close', x + 435, y + 383, 85, function () { Script.stop(); });
     function click(ev) { var id = Overlays.getOverlayAtPoint({ x: ev.x, y: ev.y }); buttons.forEach(function (b) { if (b.id === id) { try { b.fn(); } catch (e) { status('Error: ' + e); } } }); }
     Messages.subscribe(channel); Messages.messageReceived.connect(receive); Controller.mousePressEvent.connect(click);
-    Script.scriptEnding.connect(function () { Script.clearTimeout(uploadTimer); Controller.mousePressEvent.disconnect(click); Messages.messageReceived.disconnect(receive); Messages.unsubscribe(channel); ids.forEach(function (id) { Overlays.deleteOverlay(id); }); });
+    Script.scriptEnding.connect(function () { if (recording) { try { Recording.stopRecording(); } catch (e) {} } Script.clearTimeout(uploadTimer); Controller.mousePressEvent.disconnect(click); Messages.messageReceived.disconnect(receive); Messages.unsubscribe(channel); ids.forEach(function (id) { Overlays.deleteOverlay(id); }); });
     refresh(); send({ target: 'library', command: 'list' });
 }());

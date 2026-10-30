@@ -11,7 +11,8 @@
             (c.placement === 'original' || c.placement === 'position') &&
             (c.placement === 'original' || (c.position && ['x', 'y', 'z'].every(function (k) {
                 return typeof c.position[k] === 'number' && isFinite(c.position[k]) && Math.abs(c.position[k]) < 100000;
-            }))) && typeof c.volume === 'number' && isFinite(c.volume) && c.volume >= 0 && c.volume <= 1;
+            }))) && (c.avatarModelURL === undefined || (typeof c.avatarModelURL === 'string' && c.avatarModelURL.length <= 2048)) &&
+            typeof c.volume === 'number' && isFinite(c.volume) && c.volume >= 0 && c.volume <= 1;
     }
     function stop() { wantsPlay = false; Recording.stopPlaying(); send('Stopped'); }
     function playReady() {
@@ -19,11 +20,15 @@
         try {
             Recording.stopPlaying();
             if (config.placement === 'position') { Avatar.position = config.position; }
+            // No viewer avatar or prior actor model is used as a fallback. HFR frames can still supply their own model.
+            Avatar.skeletonModelURL = /^(atp:|https?:\/\/)/i.test(config.avatarModelURL || '') ? config.avatarModelURL : '';
+            if (typeof Avatar.setAvatarEntityData === 'function') { Avatar.setAvatarEntityData({}); }
+            if (typeof Avatar.setAttachmentData === 'function') { Avatar.setAttachmentData([]); }
             Recording.setPlayFromCurrentLocation(config.placement !== 'original');
             Recording.setPlayerLoop(!!config.loop);
             Recording.setPlayerVolume(config.volume);
             Recording.setPlayerUseDisplayName(false);
-            Recording.setPlayerUseSkeletonModel(false);
+            Recording.setPlayerUseSkeletonModel(true);
             Recording.startPlaying();
             send('Playing');
         } catch (e) { send('Playback error: ' + e); }

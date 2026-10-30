@@ -19,7 +19,8 @@
             var item = m.item, data = readData(), items = Array.isArray(data.robotdollyMK2Library) ? data.robotdollyMK2Library : [];
             if (!item || typeof item.name !== 'string' || !item.name.trim() || item.name.length > 80 ||
                     typeof item.url !== 'string' || !/^atp:\/robotdolly-mk2\/[a-f0-9]{64}\.hfr$/i.test(item.url) ||
-                    typeof item.created !== 'string' || typeof item.durationSeconds !== 'number' || !isFinite(item.durationSeconds)) {
+                    typeof item.created !== 'string' || typeof item.durationSeconds !== 'number' || !isFinite(item.durationSeconds) ||
+                    typeof item.avatarModelURL !== 'string' || item.avatarModelURL.length > 2048) {
                 send({ source: 'library', request: m.request, error: 'Invalid recording details' }); return;
             }
             if (items.some(function (x) { return x.name.toLowerCase() === item.name.toLowerCase(); })) {

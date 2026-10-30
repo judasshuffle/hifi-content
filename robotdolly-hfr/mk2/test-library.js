@@ -14,15 +14,18 @@ const Overlays = { addOverlay(type, props) { const id = nextId++; overlays[id] =
 const Recording = { startRecording() {}, stopRecording() {}, saveRecordingToAsset(cb) { uploadCallback = cb; return true; } };
 const Assets = { setMapping(p, h, cb) { mapArgs = [p, h]; mapCallback = cb; } };
 const controller = { mousePressEvent: signal(clicks) };
-vm.runInNewContext(read('theatre-hud.js'), { Messages, Script, Overlays, Recording, Assets, Controller: controller, Window: { prompt() { return prompts.shift(); } }, MyAvatar: { position: { x: 0, y: 0, z: 0 } }, Quat: {}, Date: fakeDate, Math, JSON, Array, isFinite, print() {} });
+const avatar = { position: { x: 0, y: 0, z: 0 }, skeletonModelURL: 'https://example.invalid/recorded.fst' };
+vm.runInNewContext(read('theatre-hud.js'), { Messages, Script, Overlays, Recording, Assets, Controller: controller, Window: { prompt() { return prompts.shift(); } }, MyAvatar: avatar, Quat: {}, Date: fakeDate, Math, JSON, Array, isFinite, print() {} });
 function click(label) { const id = Object.keys(overlays).find(id => overlays[id].text === label); assert(id, 'missing button ' + label); clicks.slice().forEach(f => f({ x: Number(id), y: 0 })); }
 function shortTimers() { const due = timeouts.filter(t => t.active && t.ms === 1500); due.forEach(t => { t.active = false; t.fn(); }); }
-click('Start Recording'); now += 3400; click('Stop Recording'); prompts.push('My scene'); click('Save Recording');
+click('Start Recording'); now += 3400; click('Stop Recording'); avatar.skeletonModelURL = 'https://example.invalid/new.fst'; prompts.push('My scene'); click('Save Recording');
 assert(uploadCallback); const hash = 'a'.repeat(64); uploadCallback('atp:' + hash); assert.deepStrictEqual(mapArgs, ['/robotdolly-mk2/' + hash + '.hfr', hash]);
 mapCallback(null); shortTimers();
-const saved = JSON.parse(data).robotdollyMK2Library; assert.strictEqual(saved.length, 1); assert.strictEqual(saved[0].name, 'My scene'); assert.strictEqual(saved[0].durationSeconds, 3.4);
+const saved = JSON.parse(data).robotdollyMK2Library; assert.strictEqual(saved.length, 1); assert.strictEqual(saved[0].name, 'My scene'); assert.strictEqual(saved[0].durationSeconds, 3.4); assert.strictEqual(saved[0].avatarModelURL, 'https://example.invalid/recorded.fst');
 click('Recording Library'); click('My scene');
 assert(outputs.some(m => m.command === 'configure' && m.slot === 1 && m.config.url === saved[0].url));
+assert(outputs.some(m => m.command === 'configure' && m.config.avatarModelURL === saved[0].avatarModelURL));
+prompts.push('atp:/manual.hfr'); click('Load URL'); assert.strictEqual(outputs.filter(m => m.command === 'configure').pop().config.avatarModelURL, '');
 Messages.sendMessage('ROBOTDOLLY_MK2_GREATATUIN_TEST_V1', JSON.stringify({ source: 'controller', token: 'PUBLIC-GREATATUIN-MK2-TEST-V1', target: 'library', command: 'add', request: 'duplicate', item: saved[0] }));
 assert(outputs.some(m => m.request === 'duplicate' && /already exists/.test(m.error)));
 click('Start Recording'); click('Stop Recording'); prompts.push('my scene'); uploadCallback = null; click('Save Recording'); assert.strictEqual(uploadCallback, null, 'duplicate must not upload');
@@ -38,10 +41,13 @@ now += 13000;
 const workers = [];
 for (let i = 0; i < 2; i++) {
     let included = '', stops = 0;
-    const workerScript = { ...Script, resolvePath(p) { return p; }, include(p) { included = p; }, stop() { stops++; } };
-    vm.runInNewContext(read('worker.js'), { Messages, Script: workerScript, Date: fakeDate, Math, JSON });
+    let context;
+    const workerScript = { ...Script, resolvePath(p) { return p; }, include(p) { included = p; vm.runInContext(read(p), context); }, stop() { stops++; } };
+    context = vm.createContext({ Messages, Script: workerScript, Date: fakeDate, Math, JSON, Agent: {}, Avatar: {}, Recording: {}, isFinite });
+    vm.runInContext(read('worker.js'), context);
     workers.push({ get included() { return included; }, get stops() { return stops; } });
 }
 const grants = outputs.filter(m => m.source === 'coordinator'); assert.deepStrictEqual(grants.slice(-2).map(m => m.slot), [1, 2]); assert(workers.every(w => w.included === 'actor.js'));
+assert.deepStrictEqual(outputs.filter(m => m.source === 'actor' && m.status === 'Online').slice(-2).map(m => m.slot), [1, 2]);
 now += 9000; intervals.slice(-2).forEach(f => f()); assert(workers.every(w => w.stops === 1), 'workers must stop on lost lease');
 console.log('Mock library upload, mapping, selection, duplicate and failure checks, plus worker slot/lease checks passed.');
