@@ -1,7 +1,7 @@
 // Included by exactly one uniquely numbered persistent agent assignment.
 (function () {
     'use strict';
-    var slot = ROBOTDOLLY_MK2_SLOT, channel = 'ROBOTDOLLY_THEATRE_MK2', token = 'CHANGE-MK2-TOKEN';
+    var slot = ROBOTDOLLY_MK2_SLOT, channel = 'ROBOTDOLLY_MK2_GREATATUIN_TEST_V1', token = 'PUBLIC-GREATATUIN-MK2-TEST-V1';
     var config = null, loaded = '', loading = false, wantsPlay = false;
     function send(status) {
         Messages.sendMessage(channel, JSON.stringify({ source: 'actor', token: token, slot: slot, status: status }));

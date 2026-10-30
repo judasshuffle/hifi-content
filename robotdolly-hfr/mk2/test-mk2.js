@@ -4,7 +4,21 @@ const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
 const dir = __dirname, actorSource = fs.readFileSync(path.join(dir, 'actor.js'), 'utf8');
-const channel = 'ROBOTDOLLY_THEATRE_MK2', token = 'CHANGE-MK2-TOKEN';
+const channel = 'ROBOTDOLLY_MK2_GREATATUIN_TEST_V1', token = 'PUBLIC-GREATATUIN-MK2-TEST-V1';
+// Simulate each raw GitHub wrapper's URL resolution and execute its actual include.
+const rawBase = 'https://raw.githubusercontent.com/judasshuffle/hifi-content/feature/robotdolly-theatre-mk2/robotdolly-hfr/mk2/';
+for (const slot of [1, 2]) {
+    const wrapperName = 'actor-' + slot + '.js', base = new URL(wrapperName, rawBase);
+    let included, announced;
+    const context = vm.createContext({ Agent: {}, Avatar: {}, Recording: {}, JSON, Math, isFinite,
+        Messages: { subscribe() {}, messageReceived: { connect() {} }, sendMessage(ch, text) { announced = JSON.parse(text); } },
+        Script: { resolvePath(relative) { return new URL(relative, base).href; }, include(url) {
+            included = url; vm.runInContext(actorSource, context, { filename: url });
+        }, scriptEnding: { connect() {} } } });
+    vm.runInContext(fs.readFileSync(path.join(dir, wrapperName), 'utf8'), context, { filename: base.href });
+    assert.strictEqual(included, new URL('actor.js', rawBase).href);
+    assert.strictEqual(announced.slot, slot);
+}
 let receivers = [], events = [], timers = [];
 function signal() { return { connect(fn) { receivers.push(fn); }, disconnect(fn) { receivers = receivers.filter(x => x !== fn); } }; }
 const messages = { messageReceived: signal(), subscribe() {}, unsubscribe() {}, sendMessage(ch, text) { events.push(JSON.parse(text)); receivers.slice().forEach(fn => fn(ch, text)); } };

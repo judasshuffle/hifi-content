@@ -1,7 +1,7 @@
 // Run in DarkRide Interface. The assignment clients and show entity run independently.
 (function () {
     'use strict';
-    var channel = 'ROBOTDOLLY_THEATRE_MK2', token = 'CHANGE-MK2-TOKEN';
+    var channel = 'ROBOTDOLLY_MK2_GREATATUIN_TEST_V1', token = 'PUBLIC-GREATATUIN-MK2-TEST-V1';
     var ids = [], buttons = [], actors = [null, null, null, null, null], statuses = ['Unknown', 'Unknown', 'Unknown', 'Unknown', 'Unknown'];
     var selected = 0, restore = false, showLoop = false, statusId, castId, selectionId, loopId, restoreId;
     var x = 30, y = 80, bg = { red: 29, green: 34, blue: 43 }, bar = { red: 18, green: 22, blue: 29 }, accent = { red: 39, green: 88, blue: 96 };

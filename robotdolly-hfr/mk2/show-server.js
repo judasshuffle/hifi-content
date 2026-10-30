@@ -1,7 +1,7 @@
 // Attach as the server script of a dedicated persistent domain entity.
 (function () {
     'use strict';
-    var channel = 'ROBOTDOLLY_THEATRE_MK2', token = 'CHANGE-MK2-TOKEN', entity, timer, poll, pending = {}, attempts = 0;
+    var channel = 'ROBOTDOLLY_MK2_GREATATUIN_TEST_V1', token = 'PUBLIC-GREATATUIN-MK2-TEST-V1', entity, timer, poll, pending = {}, attempts = 0;
     function send(m) { m.token = token; Messages.sendMessage(channel, JSON.stringify(m)); }
     function saved() {
         try { return JSON.parse(Entities.getEntityProperties(entity, ['userData']).userData || '{}').robotdollyMK2 || null; }
